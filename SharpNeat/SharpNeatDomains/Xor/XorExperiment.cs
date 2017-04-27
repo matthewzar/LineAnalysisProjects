@@ -85,7 +85,7 @@ namespace SharpNeat.Domains.Xor
         /// </summary>
         public int OutputCount
         {
-            get { return 1; }
+            get { return 2; }
         }
 
         /// <summary>

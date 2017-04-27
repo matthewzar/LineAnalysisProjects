@@ -152,10 +152,13 @@ namespace SharpNeatGUI
         {
             // Dump the experiment's default parameters into the GUI.
             INeatExperiment experiment = GetSelectedExperiment();
-            txtParamPopulationSize.Text = experiment.DefaultPopulationSize.ToString();
+            //LN: Note that _selectedExperiment should now have a value, so other buttons will begin working (such as "Create Random Population")
 
             NeatEvolutionAlgorithmParameters eaParams = experiment.NeatEvolutionAlgorithmParameters;
             NeatGenomeParameters ngParams = experiment.NeatGenomeParameters;
+
+            //Update population field on page 1, and then all other fields on page 2. Does NOT update 'Current Stats' text box values on page 1
+            txtParamPopulationSize.Text = experiment.DefaultPopulationSize.ToString();
             txtParamInitialConnectionProportion.Text = ngParams.InitialInterconnectionsProportion.ToString();
             txtParamNumberOfSpecies.Text = eaParams.SpecieCount.ToString();
             txtParamElitismProportion.Text = eaParams.ElitismProportion.ToString();
@@ -172,12 +175,15 @@ namespace SharpNeatGUI
 
         private IGuiNeatExperiment GetSelectedExperiment()
         {
-            if(null == _selectedExperiment && null != cmbExperiments.SelectedItem)
+            if(_selectedExperiment == null && cmbExperiments.SelectedItem != null)
             {
-                ExperimentInfo expInfo = (ExperimentInfo)(((ListItem)cmbExperiments.SelectedItem).Data);
-
+                //All about extracting the selected combobox items data as an ExpirentInfo instance
+                var asListItem = cmbExperiments.SelectedItem as ListItem;
+                var expInfo = asListItem.Data as ExperimentInfo;
+                
                 Assembly assembly = Assembly.LoadFrom(expInfo.AssemblyPath);
                 // TODO: Handle non-gui experiments.
+                //Instantiate the assebly, and then initilialise its starting values
                 _selectedExperiment = assembly.CreateInstance(expInfo.ClassName) as IGuiNeatExperiment;
                 _selectedExperiment.Initialize(expInfo.Name, expInfo.XmlConfig);
             }
@@ -190,6 +196,7 @@ namespace SharpNeatGUI
 
         private void btnCreateRandomPop_Click(object sender, EventArgs e)
         {
+            #region Check if Text Boxes can be parsed to valid values
             // Parse population size and interconnection proportion from GUI fields.
             int? popSize = ParseInt(txtParamPopulationSize);
             if(null == popSize) {
@@ -200,15 +207,17 @@ namespace SharpNeatGUI
             if(null == initConnProportion) {
                 return;
             }
+            #endregion
 
+            //Load up the selected experiment, but ONLY if it hasn't already been loaded by another button
             INeatExperiment experiment = GetSelectedExperiment();
-            experiment.NeatGenomeParameters.InitialInterconnectionsProportion = initConnProportion.Value;
+            experiment.SetInitialInterconnectionsProportion(initConnProportion.Value);
 
             // Create a genome factory appropriate for the experiment.
             IGenomeFactory<NeatGenome> genomeFactory = experiment.CreateGenomeFactory();
-                
+            
             // Create an initial population of randomly generated genomes.
-            List<NeatGenome> genomeList = genomeFactory.CreateGenomeList(popSize.Value, 0u);
+            List<NeatGenome> genomeList = genomeFactory.CreateGenomeList(popSize.Value);
 
             // Assign population to form variables & update GUI appropriately.
             _genomeFactory = genomeFactory;

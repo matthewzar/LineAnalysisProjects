@@ -18,6 +18,14 @@ using SharpNeat.Phenomes;
 
 namespace SharpNeat.Domains
 {
+    public static class ExtendINeat
+    {
+        public static void SetInitialInterconnectionsProportion(this INeatExperiment experiment, double value)
+        {
+            experiment.NeatGenomeParameters.InitialInterconnectionsProportion = value;
+        }
+    }
+
     /// <summary>
     /// Interface for classes that aggregate a number of experimental parameters and component creation routines.
     /// INeatExperiment is a layer onto of the core SharpNeatLib that provides a convenient packaging up of various

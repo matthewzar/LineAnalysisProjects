@@ -53,8 +53,8 @@ namespace SharpNeat.Core
         /// </summary>
         /// <param name="length">The number of genomes to create.</param>
         /// <param name="birthGeneration">The current evolution algorithm generation. 
-        /// Assigned to the new genomes as their birth generation.</param>
-        List<TGenome> CreateGenomeList(int length, uint birthGeneration);
+        /// Assigned to the new genomes as their birth generation. Defaults to 0</param>
+        List<TGenome> CreateGenomeList(int length, uint birthGeneration=0u);
 
         /// <summary>
         /// Creates a list of genomes spawned from a seed genome. Spawning uses asexual reproduction.

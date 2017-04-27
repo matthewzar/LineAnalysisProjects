@@ -73,7 +73,8 @@ namespace SharpNeatGUI
         /// </summary>
         public void RefreshView()
         {
-            if(null != _ea && null != _ea.CurrentChampGenome) {
+            //LN: if we update _ea to expose extra NeatGenome types (such as CurrentGeneration[0]) allows you display arbitrary genomes
+            if (null != _ea && null != _ea.CurrentChampGenome) {
                 _genomeViewControl.RefreshView(_ea.CurrentChampGenome);
             }
         }

@@ -18,6 +18,16 @@ namespace SharpNeatGUI
     /// <summary>
     /// Stores experiment class info. Used by problem domain drop down combobox in GUI to hold details of
     /// how to instantiate selected experiments.
+    /// 
+    /// LN: This class is popuolated from the .xml files that follow a pattern such as:
+    ///     <Experiment name="Boxes Visual Discrimination w/length input (HyperNEAT)">
+    ///        <AssemblyPath>SharpNeatDomains.dll</AssemblyPath>
+    ///        <ClassName>SharpNeat.Domains.BoxesVisualDiscrimination.BoxesVisualDiscriminationExperiment</ClassName>
+    ///       ...
+    ///        <Resolution>11</Resolution>
+    ///        <Description>Boxes Visual Discrimination Task, as described in:em domain view allows the performance of the best genome to be observed.The view also allows the HyperNEAT genome to be decoded using a range of visual field pixel resolutions beyond the 11x11 resolution that genomes are trained with.The ability to do this is a feature of HyperNEAT - the evolved genomes are Compositional Pattern Producing Networks (CPPNs). A CPPN defines the connection strength between nodes positioned in some euclidean space and therefore we can use a CPPN to produce neural networks with more nodes by increasing the number and density of nodes.
+    ///        </Description>
+    ///     </Experiment>
     /// </summary>
     public class ExperimentInfo
     {

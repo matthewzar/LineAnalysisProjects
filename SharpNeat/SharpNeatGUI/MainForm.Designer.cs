@@ -180,7 +180,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.btnCopyLogToClipboard);
             this.splitContainer1.Panel2.Controls.Add(this.lbxLog);
-            this.splitContainer1.Size = new System.Drawing.Size(524, 672);
+            this.splitContainer1.Size = new System.Drawing.Size(747, 672);
             this.splitContainer1.SplitterDistance = 471;
             this.splitContainer1.SplitterWidth = 6;
             this.splitContainer1.TabIndex = 0;
@@ -193,7 +193,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 24);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(524, 447);
+            this.tabControl1.Size = new System.Drawing.Size(747, 447);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
@@ -206,7 +206,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(516, 421);
+            this.tabPage1.Size = new System.Drawing.Size(739, 421);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Page 1";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -381,7 +381,7 @@
             this.gbxCurrentStats.Controls.Add(this.txtStatsBest);
             this.gbxCurrentStats.Location = new System.Drawing.Point(257, 6);
             this.gbxCurrentStats.Name = "gbxCurrentStats";
-            this.gbxCurrentStats.Size = new System.Drawing.Size(250, 411);
+            this.gbxCurrentStats.Size = new System.Drawing.Size(472, 411);
             this.gbxCurrentStats.TabIndex = 19;
             this.gbxCurrentStats.TabStop = false;
             this.gbxCurrentStats.Text = "Current Stats";
@@ -544,9 +544,9 @@
             // 
             this.label19.Location = new System.Drawing.Point(104, 258);
             this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(137, 16);
+            this.label19.Size = new System.Drawing.Size(369, 16);
             this.label19.TabIndex = 17;
-            this.label19.Text = "Mean Genome Complexity";
+            this.label19.Text = "Mean Genome Complexity (corresponds to ComplexityThreshold in XML)";
             // 
             // label18
             // 
@@ -974,7 +974,7 @@
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(524, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(747, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -1223,7 +1223,7 @@
             // 
             this.btnCopyLogToClipboard.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCopyLogToClipboard.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.btnCopyLogToClipboard.Location = new System.Drawing.Point(406, 1);
+            this.btnCopyLogToClipboard.Location = new System.Drawing.Point(629, 1);
             this.btnCopyLogToClipboard.Name = "btnCopyLogToClipboard";
             this.btnCopyLogToClipboard.Size = new System.Drawing.Size(100, 22);
             this.btnCopyLogToClipboard.TabIndex = 1;
@@ -1239,7 +1239,7 @@
             this.lbxLog.ItemHeight = 15;
             this.lbxLog.Location = new System.Drawing.Point(0, 0);
             this.lbxLog.Name = "lbxLog";
-            this.lbxLog.Size = new System.Drawing.Size(524, 195);
+            this.lbxLog.Size = new System.Drawing.Size(747, 195);
             this.lbxLog.TabIndex = 0;
             // 
             // populationToolStripMenuItem
@@ -1251,7 +1251,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(524, 672);
+            this.ClientSize = new System.Drawing.Size(747, 672);
             this.Controls.Add(this.splitContainer1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
