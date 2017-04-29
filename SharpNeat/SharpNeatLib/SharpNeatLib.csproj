@@ -127,6 +127,7 @@
     <Compile Include="Network\ActivationFunctions\ActivationFunctionInfo.cs" />
     <Compile Include="Genomes\HyperNeat\CppnGenomeFactory.cs" />
     <Compile Include="Network\ActivationFunctions\RadialBasis\RbfGaussian.cs" />
+    <Compile Include="Network\ActivationFunctions\Bipolar\RectifiedLinearUnit.cs" />
     <Compile Include="Network\AcyclicNetworkDepthAnalysis.cs" />
     <Compile Include="Network\ConnectionList.cs" />
     <Compile Include="Network\CyclicNetworkDepthAnalysis.cs" />

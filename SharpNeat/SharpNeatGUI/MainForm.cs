@@ -43,7 +43,7 @@ namespace SharpNeatGUI
         IGuiNeatExperiment _selectedExperiment;
         IGenomeFactory<NeatGenome> _genomeFactory;
         List<NeatGenome> _genomeList;
-        NeatEvolutionAlgorithm<NeatGenome> _ea;
+        NeatEvolutionAlgorithm<NeatGenome> _neatEvolutionAlgorithm;
         StreamWriter _logFileWriter = null;
         /// <summary>Number format for building filename when saving champ genomes.</summary>
         NumberFormatInfo _filenameNumberFormatter;
@@ -83,6 +83,11 @@ namespace SharpNeatGUI
         public MainForm()
         {
             InitializeComponent();
+
+            //LN comment/uncomment this line to quickly experiment with the differences between activation functions
+            NeatGenomeParameters.DefaultActionFunction = SharpNeat.Network.ActivationFunctions.Bipolar.RectifiedLinearUnit.__DefaultInstance; 
+            // TODO - take note how beutiful this is ^_^
+            
             Logger.SetListBox(lbxLog);
             XmlConfigurator.Configure(new FileInfo("log4net.properties"));
             InitProblemDomainList();
@@ -231,9 +236,9 @@ namespace SharpNeatGUI
 
         private void btnSearchStart_Click(object sender, EventArgs e)
         {
-            if(null != _ea)
+            if(null != _neatEvolutionAlgorithm)
             {   // Resume existing EA & update GUI state.
-                _ea.StartContinue();
+                _neatEvolutionAlgorithm.StartContinue();
                 UpdateGuiState();
                 return;
             }
@@ -249,20 +254,20 @@ namespace SharpNeatGUI
             }
 
             // Create evolution algorithm.
-            _ea = _selectedExperiment.CreateEvolutionAlgorithm(_genomeFactory, _genomeList);
+            _neatEvolutionAlgorithm = _selectedExperiment.CreateEvolutionAlgorithm(_genomeFactory, _genomeList);
 
             // Attach update event listener.
-            _ea.UpdateEvent += new EventHandler(_ea_UpdateEvent);
-            _ea.PausedEvent += new EventHandler(_ea_PausedEvent);
+            _neatEvolutionAlgorithm.UpdateEvent += new EventHandler(_ea_UpdateEvent);
+            _neatEvolutionAlgorithm.PausedEvent += new EventHandler(_ea_PausedEvent);
 
             // Notify any open views.
-            if(null != _bestGenomeForm) { _bestGenomeForm.Reconnect(_ea); }
-            if(null != _domainForm) { _domainForm.Reconnect(_ea); }
+            if(null != _bestGenomeForm) { _bestGenomeForm.Reconnect(_neatEvolutionAlgorithm); }
+            if(null != _domainForm) { _domainForm.Reconnect(_neatEvolutionAlgorithm); }
             foreach(TimeSeriesGraphForm graphForm in _timeSeriesGraphFormList) {
-                graphForm.Reconnect(_ea);
+                graphForm.Reconnect(_neatEvolutionAlgorithm);
             }
             foreach(SummaryGraphForm graphForm in _summaryGraphFormList) {
-                graphForm.Reconnect(_ea);
+                graphForm.Reconnect(_neatEvolutionAlgorithm);
             }
 
             // Create/open log file if the option is selected.
@@ -274,13 +279,13 @@ namespace SharpNeatGUI
             }
 
             // Start the algorithm & update GUI state.
-            _ea.StartContinue();
+            _neatEvolutionAlgorithm.StartContinue();
             UpdateGuiState();
         }
 
         private void btnSearchStop_Click(object sender, EventArgs e)
         {
-            _ea.RequestPause();
+            _neatEvolutionAlgorithm.RequestPause();
 
             if(null != _logFileWriter)
             {
@@ -296,7 +301,7 @@ namespace SharpNeatGUI
             _genomeFactory = null;
             _genomeList = null;
             // TODO: Proper cleanup of EA - e.g. main worker thread termination.
-            _ea = null;
+            _neatEvolutionAlgorithm = null;
             _champGenomeFitness = 0.0;
             Logger.Clear();
             UpdateGuiState_ResetStats();
@@ -330,7 +335,7 @@ namespace SharpNeatGUI
 
         private void UpdateGuiState()
         {
-            if(null == _ea)
+            if(null == _neatEvolutionAlgorithm)
             {
                 if(null == _genomeList) {
                     UpdateGuiState_NoPopulation();
@@ -341,7 +346,7 @@ namespace SharpNeatGUI
             }
             else
             {
-                switch(_ea.RunState)
+                switch(_neatEvolutionAlgorithm.RunState)
                 {
                     case RunState.Ready:
                     case RunState.Paused:
@@ -351,7 +356,7 @@ namespace SharpNeatGUI
                         UpdateGuiState_EaRunning();
                         break;
                     default:
-                        throw new ApplicationException(string.Format("Unexpected RunState [{0}]", _ea.RunState));
+                        throw new ApplicationException(string.Format("Unexpected RunState [{0}]", _neatEvolutionAlgorithm.RunState));
                 }
             }
         }
@@ -479,7 +484,7 @@ namespace SharpNeatGUI
             loadSeedGenomesToolStripMenuItem.Enabled = false;
             loadSeedGenomeToolStripMenuItem.Enabled = false;
             savePopulationToolStripMenuItem.Enabled = true;
-            saveBestGenomeToolStripMenuItem.Enabled = (_ea.CurrentChampGenome != null);
+            saveBestGenomeToolStripMenuItem.Enabled = (_neatEvolutionAlgorithm.CurrentChampGenome != null);
         }
 
         /// <summary>
@@ -528,9 +533,9 @@ namespace SharpNeatGUI
 
         private void UpdateGuiState_EaStats()
         {
-            NeatAlgorithmStats stats = _ea.Statistics;
-            txtSearchStatsMode.Text = _ea.ComplexityRegulationMode.ToString();
-            switch( _ea.ComplexityRegulationMode)
+            NeatAlgorithmStats stats = _neatEvolutionAlgorithm.Statistics;
+            txtSearchStatsMode.Text = _neatEvolutionAlgorithm.ComplexityRegulationMode.ToString();
+            switch( _neatEvolutionAlgorithm.ComplexityRegulationMode)
             {
                 case ComplexityRegulationMode.Complexifying:
                     txtSearchStatsMode.BackColor = Color.LightSkyBlue;
@@ -540,11 +545,11 @@ namespace SharpNeatGUI
                     break;
             }
 
-            txtStatsGeneration.Text = _ea.CurrentGeneration.ToString("N0");
+            txtStatsGeneration.Text = _neatEvolutionAlgorithm.CurrentGeneration.ToString("N0");
             txtStatsBest.Text = stats._maxFitness.ToString();
 
             // Auxiliary fitness info.
-            AuxFitnessInfo[] auxFitnessArr = _ea.CurrentChampGenome.EvaluationInfo.AuxFitnessArr;
+            AuxFitnessInfo[] auxFitnessArr = _neatEvolutionAlgorithm.CurrentChampGenome.EvaluationInfo.AuxFitnessArr;
             if(auxFitnessArr.Length > 0) {
                 txtStatsAlternativeFitness.Text = auxFitnessArr[0]._value.ToString("#.######");
             } else {
@@ -555,7 +560,7 @@ namespace SharpNeatGUI
             txtSpecieChampMean.Text = stats._meanSpecieChampFitness.ToString("#.######");
             txtStatsTotalEvals.Text = stats._totalEvaluationCount.ToString("N0");
             txtStatsEvalsPerSec.Text = stats._evaluationsPerSec.ToString("##,#.##");
-            txtStatsBestGenomeComplx.Text = _ea.CurrentChampGenome.Complexity.ToString("N0");
+            txtStatsBestGenomeComplx.Text = _neatEvolutionAlgorithm.CurrentChampGenome.Complexity.ToString("N0");
             txtStatsMeanGenomeComplx.Text = stats._meanComplexity.ToString("#.##");
             txtStatsMaxGenomeComplx.Text = stats._maxComplexity.ToString("N0");
 
@@ -746,7 +751,7 @@ namespace SharpNeatGUI
                 // Save genome to xml file.
                 using(XmlWriter xw = XmlWriter.Create(filePath, _xwSettings))
                 {
-                    experiment.SavePopulation(xw, new NeatGenome[] {_ea.CurrentChampGenome});
+                    experiment.SavePopulation(xw, new NeatGenome[] {_neatEvolutionAlgorithm.CurrentChampGenome});
                 }
             }
             catch(Exception ex)
@@ -768,7 +773,7 @@ namespace SharpNeatGUI
             }
 
             // Create form.
-            _bestGenomeForm = new GenomeForm("Best Genome", genomeView, _ea);
+            _bestGenomeForm = new GenomeForm("Best Genome", genomeView, _neatEvolutionAlgorithm);
 
             // Attach a event handler to update this main form when the genome form is closed.
             _bestGenomeForm.FormClosed += new FormClosedEventHandler(delegate(object senderObj, FormClosedEventArgs eArgs)
@@ -794,7 +799,7 @@ namespace SharpNeatGUI
             }
 
             // Create form.
-            _domainForm = new ProblemDomainForm(experiment.Name, domainView, _ea);
+            _domainForm = new ProblemDomainForm(experiment.Name, domainView, _neatEvolutionAlgorithm);
 
             // Attach a event handler to update this main form when the domain form is closed.
             _domainForm.FormClosed += new FormClosedEventHandler(delegate(object senderObj, FormClosedEventArgs eArgs)
@@ -817,7 +822,7 @@ namespace SharpNeatGUI
 
         private void fitnessBestMeansToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             // Create data sources.
             List<TimeSeriesDataSource> _dsList = new List<TimeSeriesDataSource>();
@@ -825,21 +830,21 @@ namespace SharpNeatGUI
 
             _dsList.Add(new TimeSeriesDataSource("Best", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Red, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.Statistics._maxFitness);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._maxFitness);
                                                             }));
 
             _dsList.Add(new TimeSeriesDataSource("Mean", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Black, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.Statistics._meanFitness);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._meanFitness);
                                                             }));
 
             _dsList.Add(new TimeSeriesDataSource("Best (Moving Average)", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Orange, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.Statistics._bestFitnessMA.Mean);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._bestFitnessMA.Mean);
                                                             }));
 
             // Create a data sources for any auxiliary fitness info.
-            AuxFitnessInfo[] auxFitnessArr = _ea.CurrentChampGenome.EvaluationInfo.AuxFitnessArr;
+            AuxFitnessInfo[] auxFitnessArr = _neatEvolutionAlgorithm.CurrentChampGenome.EvaluationInfo.AuxFitnessArr;
             if(null != auxFitnessArr)
             {
                 for(int i=0; i<auxFitnessArr.Length; i++)
@@ -847,15 +852,15 @@ namespace SharpNeatGUI
                     // 'Capture' the value of i in a locally defined variable that has scope specific to each delegate creation (below). If capture 'i' instead then it will always have
                     // its last value in each delegate (which happens to be one past the end of the array).
                     int ii = i;
-                    _dsList.Add(new TimeSeriesDataSource(_ea.CurrentChampGenome.EvaluationInfo.AuxFitnessArr[i]._name, TimeSeriesDataSource.DefaultHistoryLength, 0, _plotColorArr[i % _plotColorArr.Length], delegate() 
+                    _dsList.Add(new TimeSeriesDataSource(_neatEvolutionAlgorithm.CurrentChampGenome.EvaluationInfo.AuxFitnessArr[i]._name, TimeSeriesDataSource.DefaultHistoryLength, 0, _plotColorArr[i % _plotColorArr.Length], delegate() 
                                                                     {   
-                                                                        return new Point2DDouble(_ea.CurrentGeneration, _ea.CurrentChampGenome.EvaluationInfo.AuxFitnessArr[ii]._value);
+                                                                        return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.CurrentChampGenome.EvaluationInfo.AuxFitnessArr[ii]._value);
                                                                     }));
                 }
             }
 
             // Create form.
-            TimeSeriesGraphForm graphForm = new TimeSeriesGraphForm("Fitness (Best and Mean)", "Generation", "Fitness", string.Empty, _dsList.ToArray(), _ea);
+            TimeSeriesGraphForm graphForm = new TimeSeriesGraphForm("Fitness (Best and Mean)", "Generation", "Fitness", string.Empty, _dsList.ToArray(), _neatEvolutionAlgorithm);
             _timeSeriesGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -874,27 +879,27 @@ namespace SharpNeatGUI
 
         private void complexityBestMeansToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             // Create data sources.
             TimeSeriesDataSource dsBestCmplx = new TimeSeriesDataSource("Best", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Red, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.CurrentChampGenome.Complexity);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.CurrentChampGenome.Complexity);
                                                             });
 
             TimeSeriesDataSource dsMeanCmplx = new TimeSeriesDataSource("Mean", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Black, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.Statistics._meanComplexity);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._meanComplexity);
                                                             });
 
             TimeSeriesDataSource dsMeanCmplxMA = new TimeSeriesDataSource("Mean (Moving Average)", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Orange, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.Statistics._complexityMA.Mean);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._complexityMA.Mean);
                                                             });
 
             // Create form.
             TimeSeriesGraphForm graphForm = new TimeSeriesGraphForm("Complexity (Best and Mean)", "Generation", "Complexity", string.Empty,
-                                                 new TimeSeriesDataSource[] {dsBestCmplx, dsMeanCmplx, dsMeanCmplxMA}, _ea);
+                                                 new TimeSeriesDataSource[] {dsBestCmplx, dsMeanCmplx, dsMeanCmplxMA}, _neatEvolutionAlgorithm);
             _timeSeriesGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -913,16 +918,16 @@ namespace SharpNeatGUI
 
         private void evaluationsPerSecToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             // Create data sources.
             TimeSeriesDataSource dsEvalsPerSec= new TimeSeriesDataSource("Evals Per Sec", TimeSeriesDataSource.DefaultHistoryLength, 0, Color.Black, delegate() 
                                                             {
-                                                                return new Point2DDouble(_ea.CurrentGeneration, _ea.Statistics._evaluationsPerSec);
+                                                                return new Point2DDouble(_neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._evaluationsPerSec);
                                                             });
             // Create form.
             TimeSeriesGraphForm graphForm = new TimeSeriesGraphForm("Evaluations Per Second", "Generation", "Evaluations", string.Empty,
-                                                 new TimeSeriesDataSource[] {dsEvalsPerSec}, _ea);
+                                                 new TimeSeriesDataSource[] {dsEvalsPerSec}, _neatEvolutionAlgorithm);
             _timeSeriesGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -941,19 +946,19 @@ namespace SharpNeatGUI
 
         private void specieSizeByRankToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsSpecieSizeRank = new SummaryDataSource("Specie Size", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArrayInt || _specieDataArrayInt.Length != specieCount) {
                                             _specieDataArrayInt = new int[specieCount];
                                         }
 
                                         // Copy specie sizes into _specieSizeArray.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArrayInt[i] = _ea.SpecieList[i].GenomeList.Count;
+                                            _specieDataArrayInt[i] = _neatEvolutionAlgorithm.SpecieList[i].GenomeList.Count;
                                         }
 
                                         // Build/create _specieSizePointArray from the _specieSizeArray.
@@ -964,7 +969,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Specie Size by Rank", "Species (largest to smallest)", "Size", string.Empty,
-                                                 new SummaryDataSource[] {dsSpecieSizeRank}, _ea);
+                                                 new SummaryDataSource[] {dsSpecieSizeRank}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -983,19 +988,19 @@ namespace SharpNeatGUI
 
         private void specieChampFitnessByRankToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsSpecieChampFitnessRank = new SummaryDataSource("Specie Fitness (Champs)", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie fitnesses into the data array.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].GenomeList[0].EvaluationInfo.Fitness;
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].GenomeList[0].EvaluationInfo.Fitness;
                                         }
 
                                         // Build/create point array.
@@ -1008,14 +1013,14 @@ namespace SharpNeatGUI
             SummaryDataSource dsSpecieMeanFitnessRank = new SummaryDataSource("Specie Fitness (Means)", 0, Color.Black, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie fitnesses into the data array.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].CalcMeanFitness();
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].CalcMeanFitness();
                                         }
 
                                         // Build/create point array.
@@ -1028,7 +1033,7 @@ namespace SharpNeatGUI
 
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Specie Fitness by Rank", "Species", "Fitness", string.Empty,
-                                                 new SummaryDataSource[] {dsSpecieChampFitnessRank, dsSpecieMeanFitnessRank}, _ea);
+                                                 new SummaryDataSource[] {dsSpecieChampFitnessRank, dsSpecieMeanFitnessRank}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1047,19 +1052,19 @@ namespace SharpNeatGUI
 
         private void specieChampComplexityByRankToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsSpecieChampComplexityRank = new SummaryDataSource("Specie Complexity (Champs)", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie complexity values into the data array.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].GenomeList[0].Complexity;
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].GenomeList[0].Complexity;
                                         }
 
                                         // Build/create point array.
@@ -1072,14 +1077,14 @@ namespace SharpNeatGUI
             SummaryDataSource dsSpecieMeanComplexityRank = new SummaryDataSource("Specie Complexity (Means)", 0, Color.Black, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie complexity values into the data array.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].CalcMeanComplexity();
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].CalcMeanComplexity();
                                         }
 
                                         // Build/create point array.
@@ -1092,7 +1097,7 @@ namespace SharpNeatGUI
 
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Specie Complexity by Rank", "Species", "Complexity", string.Empty,
-                                                 new SummaryDataSource[] {dsSpecieChampComplexityRank, dsSpecieMeanComplexityRank}, _ea);
+                                                 new SummaryDataSource[] {dsSpecieChampComplexityRank, dsSpecieMeanComplexityRank}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1111,19 +1116,19 @@ namespace SharpNeatGUI
 
         private void genomeFitnessByRankToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsGenomeFitnessRank = new SummaryDataSource("Genome Fitness", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int genomeCount = _ea.GenomeList.Count;
+                                        int genomeCount = _neatEvolutionAlgorithm.GenomeList.Count;
                                         if(null == _genomeDataArray || _genomeDataArray.Length != genomeCount) {
                                             _genomeDataArray = new double[genomeCount];
                                         }
 
                                         // Copy genome fitness values into the data array.
                                         for(int i=0; i<genomeCount; i++) {
-                                            _genomeDataArray[i] = _ea.GenomeList[i].EvaluationInfo.Fitness;
+                                            _genomeDataArray[i] = _neatEvolutionAlgorithm.GenomeList[i].EvaluationInfo.Fitness;
                                         }
 
                                         // Build/create point array.
@@ -1134,7 +1139,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Genome Fitness by Rank", "Genomes", "Fitness", string.Empty,
-                                                 new SummaryDataSource[] {dsGenomeFitnessRank}, _ea);
+                                                 new SummaryDataSource[] {dsGenomeFitnessRank}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1153,19 +1158,19 @@ namespace SharpNeatGUI
 
         private void genomeComplexityByRankToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsGenomeComplexityRank = new SummaryDataSource("Genome Complexity", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int genomeCount = _ea.GenomeList.Count;
+                                        int genomeCount = _neatEvolutionAlgorithm.GenomeList.Count;
                                         if(null == _genomeDataArray || _genomeDataArray.Length != genomeCount) {
                                             _genomeDataArray = new double[genomeCount];
                                         }
 
                                         // Copy genome complexity values into the data array.
                                         for(int i=0; i<genomeCount; i++) {
-                                            _genomeDataArray[i] = _ea.GenomeList[i].Complexity;
+                                            _genomeDataArray[i] = _neatEvolutionAlgorithm.GenomeList[i].Complexity;
                                         }
 
                                         // Build/create point array.
@@ -1176,7 +1181,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Genome Complexity by Rank", "Genomes", "Complexity", string.Empty,
-                                                 new SummaryDataSource[] {dsGenomeComplexityRank}, _ea);
+                                                 new SummaryDataSource[] {dsGenomeComplexityRank}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1195,19 +1200,19 @@ namespace SharpNeatGUI
 
         private void specieSizeDistributionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsSpecieSizeDist = new SummaryDataSource("Specie Size Histogram", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie sizes into _specieSizeArray.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].GenomeList.Count;
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].GenomeList.Count;
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1218,7 +1223,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Specie Size Frequency Histogram", "Species Size", "Frequency", string.Empty,
-                                                 new SummaryDataSource[] {dsSpecieSizeDist}, _ea);
+                                                 new SummaryDataSource[] {dsSpecieSizeDist}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1237,19 +1242,19 @@ namespace SharpNeatGUI
 
         private void specieFitnessDistributionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsSpecieChampFitnessDist = new SummaryDataSource("Specie Fitness Histogram (Champ)", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie sizes into _specieSizeArray.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].GenomeList[0].EvaluationInfo.Fitness;
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].GenomeList[0].EvaluationInfo.Fitness;
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1262,14 +1267,14 @@ namespace SharpNeatGUI
             SummaryDataSource dsSpecieMeanFitnessDist = new SummaryDataSource("Specie Fitness Histogram (Mean)", 0, Color.Black, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie sizes into _specieSizeArray.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].CalcMeanFitness();
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].CalcMeanFitness();
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1280,7 +1285,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Specie Fitness Histogram", "Fitness", "Frequency", string.Empty,
-                                                 new SummaryDataSource[] {dsSpecieChampFitnessDist, dsSpecieMeanFitnessDist}, _ea);
+                                                 new SummaryDataSource[] {dsSpecieChampFitnessDist, dsSpecieMeanFitnessDist}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1299,19 +1304,19 @@ namespace SharpNeatGUI
 
         private void specieComplexityDistributionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsSpecieChampComplexityDist = new SummaryDataSource("Specie Complexity Histogram (Champ)", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie sizes into _specieSizeArray.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].GenomeList[0].Complexity;
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].GenomeList[0].Complexity;
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1324,14 +1329,14 @@ namespace SharpNeatGUI
             SummaryDataSource dsSpecieMeanComplexityDist = new SummaryDataSource("Specie Complexity Histogram (Mean)", 0, Color.Black, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int specieCount = _ea.SpecieList.Count;
+                                        int specieCount = _neatEvolutionAlgorithm.SpecieList.Count;
                                         if(null == _specieDataArray || _specieDataArray.Length != specieCount) {
                                             _specieDataArray = new double[specieCount];
                                         }
 
                                         // Copy specie sizes into _specieSizeArray.
                                         for(int i=0; i<specieCount; i++) {
-                                            _specieDataArray[i] = _ea.SpecieList[i].CalcMeanComplexity();
+                                            _specieDataArray[i] = _neatEvolutionAlgorithm.SpecieList[i].CalcMeanComplexity();
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1342,7 +1347,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Specie Complexity Histogram", "Complexity", "Frequency", string.Empty,
-                                                 new SummaryDataSource[] {dsSpecieChampComplexityDist, dsSpecieMeanComplexityDist}, _ea);
+                                                 new SummaryDataSource[] {dsSpecieChampComplexityDist, dsSpecieMeanComplexityDist}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1361,19 +1366,19 @@ namespace SharpNeatGUI
 
         private void genomeFitnessDistributionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsGenomeFitnessDist = new SummaryDataSource("Genome Fitness Histogram", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int genomeCount = _ea.GenomeList.Count;
+                                        int genomeCount = _neatEvolutionAlgorithm.GenomeList.Count;
                                         if(null == _genomeDataArray || _genomeDataArray.Length != genomeCount) {
                                             _genomeDataArray = new double[genomeCount];
                                         }
 
                                         // Copy genome fitness values into the data array.
                                         for(int i=0; i<genomeCount; i++) {
-                                            _genomeDataArray[i] = _ea.GenomeList[i].EvaluationInfo.Fitness;
+                                            _genomeDataArray[i] = _neatEvolutionAlgorithm.GenomeList[i].EvaluationInfo.Fitness;
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1384,7 +1389,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Genome Fitness Histogram", "Fitness", "Frequency", string.Empty,
-                                                 new SummaryDataSource[] {dsGenomeFitnessDist}, _ea);
+                                                 new SummaryDataSource[] {dsGenomeFitnessDist}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1403,19 +1408,19 @@ namespace SharpNeatGUI
 
         private void genomeComplexityDistributionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(null == _ea) return;
+            if(null == _neatEvolutionAlgorithm) return;
 
             SummaryDataSource dsGenomeComplexityDist = new SummaryDataSource("Genome Complexity Histogram", 0, Color.Red, delegate()
                                     {
                                         // Ensure temp working storage is ready.
-                                        int genomeCount = _ea.GenomeList.Count;
+                                        int genomeCount = _neatEvolutionAlgorithm.GenomeList.Count;
                                         if(null == _genomeDataArray || _genomeDataArray.Length != genomeCount) {
                                             _genomeDataArray = new double[genomeCount];
                                         }
 
                                         // Copy genome fitness values into the data array.
                                         for(int i=0; i<genomeCount; i++) {
-                                            _genomeDataArray[i] = _ea.GenomeList[i].Complexity;
+                                            _genomeDataArray[i] = _neatEvolutionAlgorithm.GenomeList[i].Complexity;
                                         }
 
                                         // Calculate a frequency distribution and retrieve it as an array of plottable points.
@@ -1426,7 +1431,7 @@ namespace SharpNeatGUI
                                     });
             // Create form.
             SummaryGraphForm graphForm = new SummaryGraphForm("Genome Complexity Histogram", "Complexity", "Frequency", string.Empty,
-                                                 new SummaryDataSource[] {dsGenomeComplexityDist}, _ea);
+                                                 new SummaryDataSource[] {dsGenomeComplexityDist}, _neatEvolutionAlgorithm);
             _summaryGraphFormList.Add(graphForm);
 
             // Attach a event handler to update this main form when the graph form is closed.
@@ -1480,10 +1485,10 @@ namespace SharpNeatGUI
                     UpdateGuiState_EaStats();
 
                     // Write entry to log window.
-                    __log.Info(string.Format("gen={0:N0} bestFitness={1:N6}", _ea.CurrentGeneration, _ea.Statistics._maxFitness));
+                    __log.Info(string.Format("gen={0:N0} bestFitness={1:N6}", _neatEvolutionAlgorithm.CurrentGeneration, _neatEvolutionAlgorithm.Statistics._maxFitness));
 
                     // Check if we should save the champ genome to a file.
-                    NeatGenome champGenome = _ea.CurrentChampGenome;
+                    NeatGenome champGenome = _neatEvolutionAlgorithm.CurrentChampGenome;
                     if(chkFileSaveGenomeOnImprovement.Checked && champGenome.EvaluationInfo.Fitness > _champGenomeFitness) 
                     {
                         _champGenomeFitness = champGenome.EvaluationInfo.Fitness;
@@ -1505,19 +1510,19 @@ namespace SharpNeatGUI
             // Handle writing to log file.
             if(null != _logFileWriter)
             {
-                NeatAlgorithmStats stats = _ea.Statistics;
+                NeatAlgorithmStats stats = _neatEvolutionAlgorithm.Statistics;
                 _logFileWriter.WriteLine(string.Format("{0:yyyy-MM-dd HH:mm:ss.fff},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}",
                                                         DateTime.Now,
                                                         stats._generation,
                                                         stats._maxFitness,
                                                         stats._meanFitness,
                                                         stats._meanSpecieChampFitness,
-                                                        _ea.CurrentChampGenome.Complexity,
+                                                        _neatEvolutionAlgorithm.CurrentChampGenome.Complexity,
                                                         stats._meanComplexity,
                                                         stats._maxComplexity,
                                                         stats._totalEvaluationCount,
                                                         stats._evaluationsPerSec,
-                                                        _ea.ComplexityRegulationMode));
+                                                        _neatEvolutionAlgorithm.ComplexityRegulationMode));
                 _logFileWriter.Flush();
             }
         }
@@ -1538,7 +1543,7 @@ namespace SharpNeatGUI
         /// </summary>
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if(null != _ea && _ea.RunState == RunState.Running)
+            if(null != _neatEvolutionAlgorithm && _neatEvolutionAlgorithm.RunState == RunState.Running)
             {
                 DialogResult result = MessageBox.Show("Evolution algorithm is still running. Exit anyway?", "Exit?", MessageBoxButtons.YesNo);
                 if(result == DialogResult.No)
@@ -1548,16 +1553,16 @@ namespace SharpNeatGUI
                 }
             }
 
-            if(null != _ea)
+            if(null != _neatEvolutionAlgorithm)
             {
                 // Detach event handlers to prevent logging attempts to GUI as it is being torn down.
-                _ea.UpdateEvent -= new EventHandler(_ea_UpdateEvent);
-                _ea.PausedEvent -= new EventHandler(_ea_PausedEvent);
+                _neatEvolutionAlgorithm.UpdateEvent -= new EventHandler(_ea_UpdateEvent);
+                _neatEvolutionAlgorithm.PausedEvent -= new EventHandler(_ea_PausedEvent);
 
-                if(_ea.RunState == RunState.Running)
+                if(_neatEvolutionAlgorithm.RunState == RunState.Running)
                 {
                     // Request algorithm to stop but don't wait.
-                    _ea.RequestPause();
+                    _neatEvolutionAlgorithm.RequestPause();
                 }
 
                 // Close log file.

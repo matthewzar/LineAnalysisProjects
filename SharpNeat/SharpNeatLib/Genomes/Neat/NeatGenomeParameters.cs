@@ -10,6 +10,7 @@
  * along with SharpNEAT; if not, see https://opensource.org/licenses/MIT.
  */
 
+using System;
 using Redzen.Numerics;
 using SharpNeat.Network;
 
@@ -40,7 +41,7 @@ namespace SharpNeat.Genomes.Neat
         #region Instance Fields
 
         bool _feedforwardOnly;
-        IActivationFunction _activationFn;
+        private IActivationFunction _activationFn;
         double _connectionWeightRange;
         double _initialInterconnectionsProportion;
         double _disjointExcessGenesRecombineProbability;
@@ -72,12 +73,16 @@ namespace SharpNeat.Genomes.Neat
 
         #region Constructors
 
+        //LN: This static field is bad practice. It meant as as an easy way of testing that the new activation function we add works with existing code.
+        // better practice is to update the constructors to accept an activation function OR update where they already being called to manually set it using the public setter for _activationFn
+        public static IActivationFunction DefaultActionFunction = SteepenedSigmoid.__DefaultInstance;
+
         /// <summary>
         /// Construct with default set of parameters.
         /// </summary>
         public NeatGenomeParameters()
         {
-            _activationFn                               = SteepenedSigmoid.__DefaultInstance;
+            _activationFn                               = DefaultActionFunction;
             _connectionWeightRange                      = DefaultConnectionWeightRange;
             _initialInterconnectionsProportion          = DefaultInitialInterconnectionsProportion;
             _disjointExcessGenesRecombineProbability    = DefaultDisjointExcessGenesRecombineProbability;
@@ -141,8 +146,14 @@ namespace SharpNeat.Genomes.Neat
         /// </summary>
         public IActivationFunction ActivationFn
         {
-            get { return _activationFn; }
-            set { _activationFn = value; }
+            get
+            {
+                return _activationFn; 
+            }
+            set
+            {
+                _activationFn = value; 
+            }
         }
 
         /// <summary>

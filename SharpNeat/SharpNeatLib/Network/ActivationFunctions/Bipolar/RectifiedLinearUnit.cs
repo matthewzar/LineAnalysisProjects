@@ -1,32 +1,15 @@
-/* ***************************************************************************
- * This file is part of SharpNEAT - Evolution of Neural Networks.
- * 
- * Copyright 2004-2016 Colin Green (sharpneat@gmail.com)
- *
- * SharpNEAT is free software; you can redistribute it and/or modify
- * it under the terms of The MIT License (MIT).
- *
- * You should have received a copy of the MIT License
- * along with SharpNEAT; if not, see https://opensource.org/licenses/MIT.
- */
-
-using System;
+﻿using System;
 using Redzen.Numerics;
 using SharpNeat.Utility;
 
-//LN: This is bookmark to mark finding activation functions easier in the future. Use this class as a template for adding RELU.
-// note that you also need to change the default activation fucntion inside of NeatGenomeParameters depending on your experiment's needs.
-namespace SharpNeat.Network
+namespace SharpNeat.Network.ActivationFunctions.Bipolar
 {
-    /// <summary>
-    /// Sigmoid activation function with a steeper curve than the PlainSimple function.
-    /// </summary>
-    public class SteepenedSigmoid : IActivationFunction
+    public class RectifiedLinearUnit : IActivationFunction
     {
         /// <summary>
         /// Default instance provided as a public static field.
         /// </summary>
-        public static readonly IActivationFunction __DefaultInstance = new SteepenedSigmoid();
+        public static readonly IActivationFunction __DefaultInstance = new RectifiedLinearUnit();
 
         /// <summary>
         /// Gets the unique ID of the function. Stored in network XML to identify which function a network or neuron 
@@ -42,7 +25,7 @@ namespace SharpNeat.Network
         /// </summary>
         public string FunctionString
         {
-            get { return "y = 1.0/(1.0 + exp(-4.9*x))"; }
+            get { return "y = y < 0 ? 0 : y "; }
         }
 
         /// <summary>
@@ -50,23 +33,29 @@ namespace SharpNeat.Network
         /// </summary>
         public string FunctionDescription
         {
-            get { return "Plain sigmoid.\r\nEffective xrange->[-1,1] yrange->[0,1]"; }
+            get { return "Rectified Linear Unit.\r\nEffective xrange->[-inf,inf] yrange->[0,inf]"; }
         }
 
         /// <summary>
         /// Gets a flag that indicates if the activation function accepts auxiliary arguments.
         /// </summary>
-        public bool AcceptsAuxArgs 
-        { 
+        public bool AcceptsAuxArgs
+        {
             get { return false; }
-        } 
+        }
 
         /// <summary>
         /// Calculates the output value for the specified input value and optional activation function auxiliary arguments.
         /// </summary>
         public double Calculate(double x, double[] auxArgs)
         {
-            return 1.0/(1.0 + Math.Exp(-4.9*x));
+            if (x > 1)
+            {
+                return 1;
+            }
+            
+            var temp = x < 0 ? 0 : x;
+            return temp;
         }
 
         /// <summary>
@@ -76,7 +65,13 @@ namespace SharpNeat.Network
         /// </summary>
         public float Calculate(float x, float[] auxArgs)
         {
-            return 1.0f/(1.0f + (float)Math.Exp(-4.9f*x));
+            if (x > 1)
+            {
+                return 1;
+            }
+
+            var temp = x < 0 ? 0 : x;
+            return temp;
         }
 
         /// <summary>
