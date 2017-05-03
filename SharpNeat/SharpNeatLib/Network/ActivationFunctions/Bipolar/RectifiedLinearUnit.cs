@@ -54,7 +54,7 @@ namespace SharpNeat.Network.ActivationFunctions.Bipolar
                 return 1;
             }
             
-            var temp = x < 0 ? 0 : x;
+            var temp = x < 0? 0: x;
             return temp;
         }
 

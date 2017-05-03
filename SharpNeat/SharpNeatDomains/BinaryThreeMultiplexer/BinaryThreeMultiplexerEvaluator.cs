@@ -101,7 +101,7 @@ namespace SharpNeat.Domains.BinaryThreeMultiplexer
                     // Assign fitness on sliding scale between 0.0 and 1.0 based on squared error.
                     // In tests squared error drove evolution significantly more efficiently in this domain than absolute error.
                     // Note. To base fitness on absolute error use: fitness += 1.0-output;
-                    fitness += 1.0-(output*output);
+                    fitness += 1.0-(output*output); //LN: this is why output values over 1 resulted in negative fitness.
                     if(output>=0.5) {
                         success=false;
                     }

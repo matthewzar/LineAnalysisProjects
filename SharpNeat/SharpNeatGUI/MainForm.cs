@@ -86,7 +86,6 @@ namespace SharpNeatGUI
 
             //LN comment/uncomment this line to quickly experiment with the differences between activation functions
             NeatGenomeParameters.DefaultActionFunction = SharpNeat.Network.ActivationFunctions.Bipolar.RectifiedLinearUnit.__DefaultInstance; 
-            // TODO - take note how beutiful this is ^_^
             
             Logger.SetListBox(lbxLog);
             XmlConfigurator.Configure(new FileInfo("log4net.properties"));
