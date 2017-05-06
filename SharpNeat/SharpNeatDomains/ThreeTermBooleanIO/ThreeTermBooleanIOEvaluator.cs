@@ -17,9 +17,9 @@ using SharpNeat.Genomes.Neat;
 using SharpNeat.Phenomes;
 using SharpNeat.SpeciationStrategies;
 
-namespace SharpNeat.Domains.RockPaperScissors
+namespace SharpNeat.Domains.ThreeTermBooleanIO
 {
-    class RockPaperScissorsEvaluator : IPhenomeEvaluator<IBlackBox>
+    class ThreeTermBooleanIOEvaluator : IPhenomeEvaluator<IBlackBox>
     {
         const double StopFitness = 100.0;
         ulong _evalCount;
@@ -64,14 +64,31 @@ namespace SharpNeat.Domains.RockPaperScissors
             ISignalArray inputArr = box.InputSignalArray;
             ISignalArray outputArr = box.OutputSignalArray;
             _evalCount++;
-            var inputs = new List<double[]> { new[] { 1.0, 0.0, 0.0 },
-                                            new[] { 0.0, 1.0, 0.0 },
-                                            new[] { 0.0, 0.0, 1.0 }};
 
-            var outputs = new List<double[]> { new[] { 0.0, 1.0, 0.0 },
-                                            new[] { 0.0, 0.0, 1.0 },
-                                            new[] { 1.0, 0.0, 0.0 }};
+            var inputs = new List<double[]>
+            {
+                new[] {0.0, 0.0, 0.0},
+                new[] {0.0, 0.0, 1.0},
+                new[] {0.0, 1.0, 0.0},
+                new[] {0.0, 1.0, 1.0},
+                new[] {1.0, 0.0, 0.0},
+                new[] {1.0, 0.0, 1.0},
+                new[] {1.0, 1.0, 0.0},
+                new[] {1.0, 1.0, 1.0}
+            };
 
+            var outputs = new List<double[]>
+            {
+                   //a==b, a!=c, a||b||C
+                new[] {1.0, 0.0, 0.0},
+                new[] {1.0, 1.0, 1.0},
+                new[] {0.0, 0.0, 1.0},
+                new[] {0.0, 1.0, 1.0},
+                new[] {0.0, 1.0, 1.0},
+                new[] {0.0, 0.0, 1.0},
+                new[] {1.0, 1.0, 1.0},
+                new[] {1.0, 0.0, 1.0}
+            };
 
             // 3 test cases.
             for (int i = 0; i < inputs.Count; i++)

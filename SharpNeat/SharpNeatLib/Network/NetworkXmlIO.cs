@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Xml;
+using SharpNeat.Network.ActivationFunctions.Bipolar;
 using SharpNeat.Utility;
 
 namespace SharpNeat.Network
@@ -563,6 +564,8 @@ namespace SharpNeat.Network
                     return StepFunction.__DefaultInstance;
                 case "RbfGaussian":
                     return RbfGaussian.__DefaultInstance;
+                case "RectifiedLinearUnit":
+                    return RectifiedLinearUnit.__DefaultInstance;
             }
             throw new ArgumentException(string.Format("Unexpected activation function [{0}]", name));
         }

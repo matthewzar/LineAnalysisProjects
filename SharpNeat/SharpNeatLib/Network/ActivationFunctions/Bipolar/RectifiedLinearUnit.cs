@@ -41,7 +41,7 @@ namespace SharpNeat.Network.ActivationFunctions.Bipolar
         /// </summary>
         public bool AcceptsAuxArgs
         {
-            get { return false; }
+            get { return true; }
         }
 
         /// <summary>
